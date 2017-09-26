@@ -62,25 +62,14 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 #endif
 }
 
-bool static cmpCurvePoints(CurvePoint c1, CurvePoint c2) {
-	return c1.position < c2.position;
+//comparison function necessary to use standard library sort function
+bool static cmpCurvePoints(CurvePoint &c1, CurvePoint &c2) {
+	return c1.time < c2.time;
 }
 // Sort controlPoints vector in ascending order: min-first
 void Curve::sortControlPoints()
 {
-	//================DELETE THIS PART AND THEN START CODING===================
-	/*
-	static bool flag = false;
-	if (!flag)
-	{
-		std::cerr << "ERROR>>>>Member function sortControlPoints is not implemented!" << std::endl;
-		flag = true;
-	}
-	*/
-
-	//=========================================================================
 	std::sort(controlPoints.begin(), controlPoints.end(), cmpCurvePoints);
-	return;
 }
 
 // Calculate the position on curve corresponding to the given time, outputPoint is the resulting position
@@ -116,33 +105,27 @@ bool Curve::calculatePoint(Point& outputPoint, float time)
 // Check Roboustness
 bool Curve::checkRobust()
 {
-	//================DELETE THIS PART AND THEN START CODING===================
-	static bool flag = false;
-	if (!flag)
-	{
-		std::cerr << "ERROR>>>>Member function checkRobust is not implemented!" << std::endl;
-		flag = true;
+	if ((type == hermiteCurve && controlPoints.size() >= 2) ||
+		(type == catmullCurve && controlPoints.size() >= 3)) {
+		return true;
 	}
-	//=========================================================================
-
-
-	return true;
+	else {
+		return false;
+	}
 }
 
 // Find the current time interval (i.e. index of the next control point to follow according to current time)
 bool Curve::findTimeInterval(unsigned int& nextPoint, float time)
 {
-	//================DELETE THIS PART AND THEN START CODING===================
-	static bool flag = false;
-	if (!flag)
-	{
-		std::cerr << "ERROR>>>>Member function findTimeInterval is not implemented!" << std::endl;
-		flag = true;
+	int index = 0;
+	for (std::vector<CurvePoint>::iterator it = controlPoints.begin(); it != controlPoints.end(); it++) {
+		if (it->time > time) {
+			nextPoint = index;
+			return true;
+		}
+		index++;
 	}
-	//=========================================================================
-
-
-	return true;
+	return false;
 }
 
 // Implement Hermite curve
