@@ -458,9 +458,31 @@ int DrawLib::_buildAgentDisplayList()
 			glRotatef(-90, 1, 0, 0);
 
 			// draw cylinder aligned w/ x axis
-			gluCylinder(_quadric, 1, 1, h, 32, 16);
+			//gluCylinder(_quadric, 1, 1, h, 32, 16);
 			glTranslatef(0, 0, h);
-			gluDisk(_quadric, 0, 1, 32, 16);
+			//gluDisk(_quadric, 0, 1, 32, 16);
+			
+			//draw rollercoaster!
+			drawBox(-0.5f, 5.0f, -0.5f, 3.0f, -0.5f, -0.4f); //base
+
+			drawBox(-0.5f, 0.0f, -0.5f, 3.0f, -0.5f, -0.0f); //back edge
+			drawBox(-0.1f, 0.0f, -0.0f, 2.5f, -0.5f, 0.5f); //back seat
+
+			drawBox(2.0f, 2.5f, -0.0f, 2.5f, -0.5f, 0.0f); //middle divider
+			drawBox(2.4f, 2.5f, -0.0f, 2.5f, -0.5f, 0.5f); //tall seat
+
+			drawBox(4.5f, 5.0f, -0.5f, 3.0f, -0.5f, -0.0f); //front edge
+
+			drawBox(-0.5f, 5.0f, 2.5f, 3.0f, -0.5f, -0.0f); //side edge
+			drawBox(-0.5f, 5.0f, -0.5f, 0.0f, -0.5f, -0.0f); //side edge
+
+			
+			//still minecraft figure
+			//drawBox(-0.5f, -0.2f, -0.5f, 0.0f, -0.5f, 0.0f); //legs
+			//drawBox(0.2f, 0.5f, -0.5f, 0.0f, -0.5f, 0.0f);
+			//drawBox(-0.5f, 0.5f, -0.5f, 0.0f, -0.0f, 0.5f); //body
+
+			//drawBoxWireFrame(0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f);
 		}
 		glPopAttrib();
 	}
@@ -500,9 +522,11 @@ int DrawLib::_buildAgentDotDisplayList()
 			glRotatef(-90, 1, 0, 0);
 
 			// draw cylinder aligned w/ x axis
-			gluCylinder(_quadric, 1, 1, h, 32, 16);
+			//gluCylinder(_quadric, 1, 1, h, 32, 16);
+
 			glTranslatef(0, 0, h);
-			gluDisk(_quadric, 0, 1, 32, 16);
+
+			//gluDisk(_quadric, 0, 1, 32, 16);
 		}
 		glPopAttrib();
 	}
