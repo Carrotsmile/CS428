@@ -180,15 +180,6 @@ Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 	Point p0 = controlPoints[nextPoint - 1].position;
 	Point p1 = controlPoints[nextPoint].position;
 
-	//================DELETE THIS PART AND THEN START CODING===================
-	static bool flag = false;
-	if (!flag)
-	{
-		std::cerr << "ERROR>>>>Member function useCatmullCurve is not implemented!" << std::endl;
-		flag = true;
-	}
-	//=========================================================================
-
 	// Calculate position at t = time on Catmull-Rom curve
 	
 	// Return result
