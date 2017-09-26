@@ -131,19 +131,20 @@ bool Curve::findTimeInterval(unsigned int& nextPoint, float time)
 // Implement Hermite curve
 Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 {
+	//this doesn't have to be like "Point newPosition = new Point(...)"?, won't the data get lost?
 	Point newPosition;
 	float normalTime, intervalTime;
 
-	//================DELETE THIS PART AND THEN START CODING===================
-	static bool flag = false;
-	if (!flag)
-	{
-		std::cerr << "ERROR>>>>Member function useHermiteCurve is not implemented!" << std::endl;
-		flag = true;
-	}
-	//=========================================================================
+	float timeCubed = std::pow(time, 3);
+	float timeSquared = std::pow(time, 2);
+
+	unsigned int startPoint = nextPoint - 1;
 
 	// Calculate position at t = time on Hermite curve
+	newPosition = (2 * timeCubed - 3 * timeSquared + 1) * controlPoints[startPoint].position
+		+ (timeCubed - 2 * timeSquared + time) * controlPoints[startPoint].tangent
+		+ (0.0 - 2 * timeCubed + 3 * timeSquared) * controlPoints[nextPoint].position
+		+ (timeCubed - timeSquared) * controlPoints[nextPoint].tangent;
 
 	// Return result
 	return newPosition;
