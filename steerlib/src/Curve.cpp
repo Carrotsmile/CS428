@@ -179,8 +179,17 @@ Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 	Point newPosition;
 	Point p0 = controlPoints[nextPoint - 1].position;
 	Point p1 = controlPoints[nextPoint].position;
+	Point p2 = controlPoints[nextPoint + 1].position;
+	Point p3 = controlPoints[nextPoint + 2].position;
+
+	float time_Cubed = std::pow(time, 3);
+	float time_Squared = std::pow(time, 2);
 
 	// Calculate position at t = time on Catmull-Rom curve
+	newPosition = 0.5 * ((2 * p1) +
+		(-p0 + p2) * time +
+		(2 * p0 - 5 * p1 + 4 * p2 - p3) * time_Squared +
+		(-p0 + 3 * p1 - 3 * p2 + p3) * time_Cubed);
 	
 	// Return result
 	return newPosition;
