@@ -44,19 +44,36 @@ void Curve::addControlPoints(const std::vector<CurvePoint>& inputPoints)
 void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 {
 #ifdef ENABLE_GUI
-
-	//================DELETE THIS PART AND THEN START CODING===================
-	static bool flag = false;
-	if (!flag)
-	{
-		std::cerr << "ERROR>>>>Member function drawCurve is not implemented!" << std::endl;
-		flag = true;
-	}
-	//=========================================================================
-
 	// Robustness: make sure there is at least two control point: start and end points
-	// Move on the curve from t=0 to t=finalPoint, using window as step size, and linearly interpolate the curve points
-	// Note that you must draw the whole curve at each frame, that means connecting line segments between each two points on the curve
+	if (checkRobust()) {
+		float f = 0.0f;
+
+		Point * p0 = new Point();
+		Point * p1 = new Point();
+
+		calculatePoint(*p0, f);
+		f += window;
+
+		// Move on the curve from t=0 to t=finalPoint, using window as step size, and linearly interpolate the curve points
+		while (f < controlPoints[controlPoints.size() - 1].time) {
+			calculatePoint(*p1, f);
+			DrawLib::drawLine(*p0, *p1, curveColor, curveThickness);
+			Point * temp = p0;
+			p0 = p1;
+			p1 = temp;
+			f += window;
+		}
+
+		// Note that you must draw the whole curve at each frame, that means connecting line segments between each two points on the curve
+		calculatePoint(*p1, f);
+		DrawLib::drawLine(*p0, *p1, curveColor, curveThickness);
+
+		delete p0;
+		delete p1;
+	}
+	else {
+		return;
+	}
 	
 	return;
 #endif
@@ -136,11 +153,13 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 	float normalTime, intervalTime;
 
 	unsigned int startPoint = nextPoint - 1;
+
 	//changed time so that we could interpolate on an arbitrary interval
 	//src for reference:
 	//https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Interpolation_on_a_single_interval
 
-	normalTime = (time - controlPoints[startPoint].time) / (controlPoints[nextPoint].time - controlPoints[startPoint].time);
+	intervalTime = (controlPoints[nextPoint].time - controlPoints[startPoint].time);
+	normalTime = (time - controlPoints[startPoint].time) / intervalTime;
 	float timeCubed = std::pow(normalTime, 3);
 	float timeSquared = std::pow(normalTime, 2);
 
@@ -158,6 +177,8 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 {
 	Point newPosition;
+	Point p0 = controlPoints[nextPoint - 1].position;
+	Point p1 = controlPoints[nextPoint].position;
 
 	//================DELETE THIS PART AND THEN START CODING===================
 	static bool flag = false;
