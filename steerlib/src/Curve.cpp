@@ -135,10 +135,14 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 	Point newPosition;
 	float normalTime, intervalTime;
 
-	float timeCubed = std::pow(time, 3);
-	float timeSquared = std::pow(time, 2);
-
 	unsigned int startPoint = nextPoint - 1;
+	//changed time so that we could interpolate on an arbitrary interval
+	//src for reference:
+	//https://en.wikipedia.org/wiki/Cubic_Hermite_spline#Interpolation_on_a_single_interval
+
+	normalTime = (time - controlPoints[startPoint].time) / (controlPoints[nextPoint].time - controlPoints[startPoint].time);
+	float timeCubed = std::pow(normalTime, 3);
+	float timeSquared = std::pow(normalTime, 2);
 
 	// Calculate position at t = time on Hermite curve
 	newPosition = (2 * timeCubed - 3 * timeSquared + 1) * controlPoints[startPoint].position
