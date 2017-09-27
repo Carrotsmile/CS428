@@ -45,12 +45,15 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 {
 #ifdef ENABLE_GUI
 	// Robustness: make sure there is at least two control point: start and end points
-	if (checkRobust()) {
-		float f = 0.0f;
 
+		if (!checkRobust())
+		{
+			return;
+		}
+		
 		Point * p0 = new Point();
-		Point * p1 = new Point();
-
+		Point * p1 = new Point(); 
+		float f = 0.0f;
 		calculatePoint(*p0, f);
 		f += window;
 
@@ -67,15 +70,33 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 		// Note that you must draw the whole curve at each frame, that means connecting line segments between each two points on the curve
 		calculatePoint(*p1, f);
 		DrawLib::drawLine(*p0, *p1, curveColor, curveThickness);
-
+		
 		delete p0;
 		delete p1;
-	}
-	else {
+
+		/*
+		if (!checkRobust())
+		{
+			return;
+		}
+
+		Point start;
+		Point end;
+
+		// draw curve from controlPoints[i] to controlPoints[i+1], use 'window' as number of segments.
+		for (int i = 0; i < controlPoints.size() - 1; i++)
+		{
+			end = controlPoints[i].position;
+			for (int j = 0; j < window - 1; j++)
+			{
+				start = end;
+				calculatePoint(end, controlPoints[i].time + (float)(j + 1) / (float)(window)* (controlPoints[i + 1].time - controlPoints[i].time));
+				DrawLib::drawLine(start, end, curveColor, curveThickness);
+			}
+			DrawLib::drawLine(end, controlPoints[i + 1].position, curveColor, curveThickness);
+		}
 		return;
-	}
-	
-	return;
+		*/
 #endif
 }
 
@@ -136,18 +157,23 @@ bool Curve::findTimeInterval(unsigned int& nextPoint, float time)
 {
 	int index = 0;
 	for (std::vector<CurvePoint>::iterator it = controlPoints.begin(); it != controlPoints.end(); it++) {
-		if (it->time > time) {
-			nextPoint = index;
-			return true;
+		std::cout << time << std::endl;
+		if (it->time <= time && index < controlPoints.size()) {
+			index++;
 		}
-		index++;
 	}
-	return false;
+	nextPoint = index;
+	if (index == controlPoints.size()) {
+		return false;
+	} else {
+		return true;
+	}
 }
 
 // Implement Hermite curve
 Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 {
+	
 	//this doesn't have to be like "Point newPosition = new Point(...)"?, won't the data get lost?
 	Point newPosition;
 	float normalTime, intervalTime;
@@ -160,17 +186,19 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 
 	intervalTime = (controlPoints[nextPoint].time - controlPoints[startPoint].time);
 	normalTime = (time - controlPoints[startPoint].time) / intervalTime;
-	float timeCubed = std::pow(normalTime, 3);
-	float timeSquared = std::pow(normalTime, 2);
+	float timeCubed = normalTime * normalTime * normalTime;
+	float timeSquared = normalTime * normalTime;
 
 	// Calculate position at t = time on Hermite curve
 	newPosition = (2 * timeCubed - 3 * timeSquared + 1) * controlPoints[startPoint].position
-		+ (timeCubed - 2 * timeSquared + time) * controlPoints[startPoint].tangent
+		+ (timeCubed - 2 * timeSquared + normalTime) * controlPoints[startPoint].tangent
 		+ (0.0 - 2 * timeCubed + 3 * timeSquared) * controlPoints[nextPoint].position
 		+ (timeCubed - timeSquared) * controlPoints[nextPoint].tangent;
 
 	// Return result
 	return newPosition;
+	
+	
 }
 
 // Implement Catmull-Rom curve
