@@ -45,75 +45,54 @@ void Curve::drawCurve(Color curveColor, float curveThickness, int window)
 {
 #ifdef ENABLE_GUI
 	// Robustness: make sure there is at least two control point: start and end points
+	
+	if (checkRobust())
+	{
+		Point p0;
+		Point p1;
 
-		if (!checkRobust())
-		{
-			return;
-		}
-		
-		Point * p0 = new Point();
-		Point * p1 = new Point(); 
-		float f = 0.0f;
-		calculatePoint(*p0, f);
-		f += window;
-
-		// Move on the curve from t=0 to t=finalPoint, using window as step size, and linearly interpolate the curve points
-		while (f < controlPoints[controlPoints.size() - 1].time) {
-			calculatePoint(*p1, f);
-			DrawLib::drawLine(*p0, *p1, curveColor, curveThickness);
-			Point * temp = p0;
-			p0 = p1;
-			p1 = temp;
-			f += window;
-		}
-
-		// Note that you must draw the whole curve at each frame, that means connecting line segments between each two points on the curve
-		calculatePoint(*p1, f);
-		DrawLib::drawLine(*p0, *p1, curveColor, curveThickness);
-		
-		delete p0;
-		delete p1;
-
-		/*
-		if (!checkRobust())
-		{
-			return;
-		}
-
-		Point start;
-		Point end;
-
-		// draw curve from controlPoints[i] to controlPoints[i+1], use 'window' as number of segments.
+		float delTime = 0;
+		//draw curve between each pair of points
 		for (int i = 0; i < controlPoints.size() - 1; i++)
 		{
-			end = controlPoints[i].position;
-			for (int j = 0; j < window - 1; j++)
+			p1 = controlPoints[i].position;
+			//draw line segments using window as time stepper
+			for (delTime = 0.0f; delTime < controlPoints[i + 1].time - controlPoints[i].time; delTime += window)
 			{
-				start = end;
-				calculatePoint(end, controlPoints[i].time + (float)(j + 1) / (float)(window)* (controlPoints[i + 1].time - controlPoints[i].time));
-				DrawLib::drawLine(start, end, curveColor, curveThickness);
+				p0 = p1;
+				calculatePoint(p1, controlPoints[i].time + delTime);
+				DrawLib::drawLine(p0, p1, curveColor, curveThickness);
 			}
-			DrawLib::drawLine(end, controlPoints[i + 1].position, curveColor, curveThickness);
+			DrawLib::drawLine(p1, controlPoints[i+1].position, curveColor, curveThickness);
 		}
+	}
+	else {
 		return;
-		*/
+	}
+	
+
 #endif
 }
 
+bool static eqCurvePoints(const CurvePoint &c1, const CurvePoint &c2) {
+	return c1.time == c2.time;
+}
 //comparison function necessary to use standard library sort function
-bool static cmpCurvePoints(CurvePoint &c1, CurvePoint &c2) {
+bool static cmpCurvePoints(const CurvePoint &c1, const CurvePoint &c2) {
 	return c1.time < c2.time;
 }
 // Sort controlPoints vector in ascending order: min-first
 void Curve::sortControlPoints()
 {
 	std::sort(controlPoints.begin(), controlPoints.end(), cmpCurvePoints);
+	controlPoints.erase(unique(controlPoints.begin(), controlPoints.end(), eqCurvePoints), controlPoints.end());
 }
 
 // Calculate the position on curve corresponding to the given time, outputPoint is the resulting position
 // Note that this function should return false if the end of the curve is reached, or no next point can be found
 bool Curve::calculatePoint(Point& outputPoint, float time)
 {
+
 	// Robustness: make sure there is at least two control point: start and end points
 	if (!checkRobust())
 		return false;
@@ -143,8 +122,7 @@ bool Curve::calculatePoint(Point& outputPoint, float time)
 // Check Roboustness
 bool Curve::checkRobust()
 {
-	if ((type == hermiteCurve && controlPoints.size() >= 2) ||
-		(type == catmullCurve && controlPoints.size() >= 3)) {
+	if (controlPoints.size() >= 2) {
 		return true;
 	}
 	else {
@@ -155,19 +133,14 @@ bool Curve::checkRobust()
 // Find the current time interval (i.e. index of the next control point to follow according to current time)
 bool Curve::findTimeInterval(unsigned int& nextPoint, float time)
 {
-	int index = 0;
-	for (std::vector<CurvePoint>::iterator it = controlPoints.begin(); it != controlPoints.end(); it++) {
-		std::cout << time << std::endl;
-		if (it->time <= time && index < controlPoints.size()) {
-			index++;
+	int index = 1;
+	for (index = 1; index < controlPoints.size(); index++) {
+		if (controlPoints[index].time > time) {
+			nextPoint = index;
+			return true;
 		}
 	}
-	nextPoint = index;
-	if (index == controlPoints.size()) {
-		return false;
-	} else {
-		return true;
-	}
+	return false;
 }
 
 // Implement Hermite curve
@@ -188,28 +161,59 @@ Point Curve::useHermiteCurve(const unsigned int nextPoint, const float time)
 	normalTime = (time - controlPoints[startPoint].time) / intervalTime;
 	float timeCubed = normalTime * normalTime * normalTime;
 	float timeSquared = normalTime * normalTime;
-
+	
+	
+	
 	// Calculate position at t = time on Hermite curve
 	newPosition = (2 * timeCubed - 3 * timeSquared + 1) * controlPoints[startPoint].position
-		+ (timeCubed - 2 * timeSquared + normalTime) * controlPoints[startPoint].tangent
+		+ (timeCubed - 2 * timeSquared + normalTime) * (intervalTime * controlPoints[startPoint].tangent)
 		+ (0.0 - 2 * timeCubed + 3 * timeSquared) * controlPoints[nextPoint].position
-		+ (timeCubed - timeSquared) * controlPoints[nextPoint].tangent;
-
+		+ (timeCubed - timeSquared) * (intervalTime * controlPoints[nextPoint].tangent);
+	
 	// Return result
 	return newPosition;
-	
 	
 }
 
 // Implement Catmull-Rom curve
 Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 {
+	//same source for reference as the hermite curve, only difference being how the tangents are calculated
 	Point newPosition;
-	Point p0 = controlPoints[nextPoint - 1].position;
-	Point p1 = controlPoints[nextPoint].position;
-
+	CurvePoint p0 = controlPoints[nextPoint - 1];
+	CurvePoint p1 = controlPoints[nextPoint];
+	Vector v0, v1;
 	// Calculate position at t = time on Catmull-Rom curve
-	
+	float normalTime, intervalTime;
+	intervalTime = controlPoints[nextPoint].time - controlPoints[nextPoint - 1].time;
+	normalTime = (time - p0.time) / intervalTime;
+	float timeSquared = normalTime * normalTime;
+	float timeCubed = normalTime * normalTime * normalTime;
+
+	//select values for v0 and v1 based on if nextPoint is last, first, or neither
+	//first point
+	if (nextPoint == 1) {
+		CurvePoint p2 = controlPoints[nextPoint + 1];
+		v0 = (p1.position - p0.position);
+		v1 = (p2.position - p0.position) / 2;
+	} 
+	//last point
+	else if (nextPoint == controlPoints.size() - 1) {
+		CurvePoint p2 = controlPoints[nextPoint - 2];
+		v0 = (p1.position - p2.position)/2;
+		v1 = (p1.position - p0.position);
+	}
+	//neithe
+	else {
+		CurvePoint p2 = controlPoints[nextPoint - 2];
+		CurvePoint p3 = controlPoints[nextPoint + 1];
+		v0 = (p1.position - p2.position) / 2;
+		v1 = (p3.position - p0.position) / 2;
+	}
+	newPosition = (2 * timeCubed - 3 * timeSquared + 1) * p0.position +
+		(-2 * timeCubed + 3 * timeSquared) * p1.position +
+		(timeCubed - 2 * timeSquared + normalTime) * v0 +
+		(timeCubed - timeSquared) * v1;
 	// Return result
 	return newPosition;
 }
