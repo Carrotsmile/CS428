@@ -122,7 +122,10 @@ bool Curve::calculatePoint(Point& outputPoint, float time)
 // Check Roboustness
 bool Curve::checkRobust()
 {
-	if (controlPoints.size() >= 2) {
+	if (controlPoints.size() >= 2 && type == hermiteCurve) {
+		return true;
+	} 
+	else if (controlPoints.size() >= 3 && type == catmullCurve) {
 		return true;
 	}
 	else {
