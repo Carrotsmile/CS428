@@ -218,6 +218,8 @@ Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 		v0 = (p1.position - p2.position) / 2;
 		v1 = (p3.position - p0.position) / 2;
 	}
+
+	//wow
 	newPosition = (2 * timeCubed - 3 * timeSquared + 1) * p0.position +
 		(-2 * timeCubed + 3 * timeSquared) * p1.position +
 		(timeCubed - 2 * timeSquared + normalTime) * v0 +
