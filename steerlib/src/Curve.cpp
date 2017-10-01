@@ -84,7 +84,10 @@ bool static cmpCurvePoints(const CurvePoint &c1, const CurvePoint &c2) {
 // Sort controlPoints vector in ascending order: min-first
 void Curve::sortControlPoints()
 {
+	//sorts control points according to time
 	std::sort(controlPoints.begin(), controlPoints.end(), cmpCurvePoints);
+
+	//removes duplicates (control points with equal time) from the list
 	controlPoints.erase(unique(controlPoints.begin(), controlPoints.end(), eqCurvePoints), controlPoints.end());
 }
 
@@ -137,6 +140,7 @@ bool Curve::checkRobust()
 bool Curve::findTimeInterval(unsigned int& nextPoint, float time)
 {
 	int index = 1;
+	//next point is the first one with time more than the current time
 	for (index = 1; index < controlPoints.size(); index++) {
 		if (controlPoints[index].time > time) {
 			nextPoint = index;
@@ -186,6 +190,7 @@ Point Curve::useCatmullCurve(const unsigned int nextPoint, const float time)
 	CurvePoint p0 = controlPoints[nextPoint - 1];
 	CurvePoint p1 = controlPoints[nextPoint];
 	Vector v0, v1;
+
 	// Calculate position at t = time on Catmull-Rom curve
 	float normalTime, intervalTime;
 	intervalTime = controlPoints[nextPoint].time - controlPoints[nextPoint - 1].time;
